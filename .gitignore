@@ -25,3 +25,8 @@ script_backup.js
 # Temporary code backups
 *.bak
 *.backup
+
+# Local admin utility scripts
+backend/scripts/checkAdminLogin.js
+backend/scripts/createFirstAdmin.js
+backend/scripts/resetAdminPassword.js
