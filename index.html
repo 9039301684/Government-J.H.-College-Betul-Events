@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#080b18">
+    <meta name="api-base" content="">
 
     <title>JH College | M.Sc. Physics Celebration</title>
 
@@ -17,8 +18,6 @@
 
     <link rel="stylesheet" href="style.css">
 </head>
-     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚛</text></svg>">s
-
 <body>
 
     <!-- Animated background -->
@@ -309,6 +308,8 @@
                 </div>
             </div>
 
+            <div class="event-listing" id="eventList" aria-live="polite"></div>
+
         </section>
 
 
@@ -451,7 +452,7 @@
 
 
 <!-- ADMIN EVENT SETTINGS -->
-<section class="section admin-section" id="adminSettings">
+<section class="section admin-section" id="adminSettings" hidden>
 
     <p class="section-label">EVENT MANAGEMENT</p>
 
@@ -468,7 +469,7 @@
             <span class="admin-icon">⚙</span>
             <div>
                 <h3>Event Settings Preview</h3>
-                <p>Demo only — not a secure admin panel yet.</p>
+                <p>Authorized admin access only.</p>
             </div>
         </div>
 
@@ -513,6 +514,161 @@
 
 
         <!-- LOGIN / REGISTRATION -->
+        <section class="section admin-section" id="adminPortalSection" hidden>
+            <p class="section-label">ADMIN DASHBOARD</p>
+            <h2>Manage the <span>college story.</span></h2>
+            <p class="section-description">Create events, manage annual albums, and oversee official college updates securely.</p>
+
+            <div class="admin-panel">
+                <div class="admin-panel-card">
+                    <div class="admin-panel-heading">
+                        <span class="admin-icon">⚙</span>
+                        <div>
+                            <h3>Event Management</h3>
+                            <p>Create, edit, and publish official events</p>
+                        </div>
+                    </div>
+
+                    <form id="adminEventForm" class="admin-form">
+                        <input type="hidden" id="eventIdField" />
+
+                        <label for="adminEventTitle">Event Title</label>
+                        <input id="adminEventTitle" type="text" maxlength="150" required />
+
+                        <label for="adminEventDate">Event Date</label>
+                        <input id="adminEventDate" type="date" required />
+
+                        <label for="adminEventTime">Event Time</label>
+                        <input id="adminEventTime" type="time" />
+
+                        <label for="adminEventVenue">Venue</label>
+                        <input id="adminEventVenue" type="text" maxlength="200" required />
+
+                        <label for="adminEventCategory">Category</label>
+                        <input id="adminEventCategory" type="text" maxlength="80" placeholder="General" />
+
+                        <label for="adminEventDescription">Description</label>
+                        <textarea id="adminEventDescription" rows="4" maxlength="1000"></textarea>
+
+                        <label for="adminEventImage">Cover Image URL</label>
+                        <input id="adminEventImage" type="url" placeholder="https://example.com/image.jpg" />
+
+                        <label>
+                            <input id="adminEventPublished" type="checkbox" checked />
+                            Publish event
+                        </label>
+
+                        <button type="submit" class="button button-gold full-button">Save Event</button>
+                        <button type="button" id="adminCancelEvent" class="button button-outline full-button">Cancel</button>
+                        <p id="adminEventMessage" class="form-message" role="status"></p>
+                    </form>
+                </div>
+
+                <div class="admin-panel-card">
+                    <div class="admin-panel-heading">
+                        <span class="admin-icon">🖼</span>
+                        <div>
+                            <h3>Annual Party Albums</h3>
+                            <p>Upload memories by year</p>
+                        </div>
+                    </div>
+
+                    <form id="albumForm" class="admin-form">
+                        <input type="hidden" id="albumIdField" />
+
+                        <label for="albumYear">Album Year</label>
+                        <input id="albumYear" type="number" min="2000" max="2100" required />
+
+                        <label for="albumTitle">Album Title</label>
+                        <input id="albumTitle" type="text" maxlength="150" required />
+
+                        <label for="albumDescription">Album Description</label>
+                        <textarea id="albumDescription" rows="3" maxlength="500"></textarea>
+
+                        <label for="albumEventDate">Event Date</label>
+                        <input id="albumEventDate" type="date" />
+
+                        <label for="albumPhotographer">Photographer</label>
+                        <input id="albumPhotographer" type="text" maxlength="120" />
+
+                        <label for="albumUploadInput">Upload Photos</label>
+                        <input id="albumUploadInput" type="file" accept="image/jpeg,image/png,image/gif,image/webp" multiple />
+                        <button type="button" id="addAnnualPartyPhotosButton" class="button button-outline full-button">Add Annual Party Photos</button>
+
+                        <button type="submit" class="button button-gold full-button">Save Album</button>
+                        <button type="button" id="albumDeleteButton" class="button button-outline full-button hidden">Delete Album</button>
+                        <p id="albumMessage" class="form-message" role="status"></p>
+                    </form>
+                </div>
+            </div>
+
+            <div class="admin-listings">
+                <div class="admin-list-card">
+                    <div class="admin-panel-heading">
+                        <span class="admin-icon">📅</span>
+                        <div>
+                            <h3>Published Events</h3>
+                            <p>Current college event list</p>
+                        </div>
+                    </div>
+                    <div id="adminEventList" class="list-stack"></div>
+                </div>
+
+                <div class="admin-list-card">
+                    <div class="admin-panel-heading">
+                        <span class="admin-icon">🎉</span>
+                        <div>
+                            <h3>Annual Photo Albums</h3>
+                            <p>Year-wise memory collection</p>
+                        </div>
+                    </div>
+                    <div id="adminAlbumList" class="list-stack"></div>
+                </div>
+            </div>
+
+            <div class="admin-listings" id="staffAccountManagement" hidden>
+                <div class="admin-list-card">
+                    <div class="admin-panel-heading">
+                        <span class="admin-icon">♙</span>
+                        <div>
+                            <h3>Staff Accounts</h3>
+                            <p>Visible to administrators and principals</p>
+                        </div>
+                    </div>
+                    <div id="staffAccountList" class="list-stack" aria-live="polite"></div>
+                </div>
+
+                <div class="admin-panel-card">
+                    <div class="admin-panel-heading">
+                        <span class="admin-icon">＋</span>
+                        <div>
+                            <h3>Create Staff Account</h3>
+                            <p>Provide the initial password to the staff member securely.</p>
+                        </div>
+                    </div>
+                    <form id="staffAccountForm" class="admin-form">
+                        <label for="staffAccountName">Full Name</label>
+                        <input id="staffAccountName" type="text" maxlength="120" autocomplete="name" required>
+
+                        <label for="staffAccountEmail">Email Address</label>
+                        <input id="staffAccountEmail" type="email" maxlength="254" autocomplete="email" required>
+
+                        <label for="staffAccountRole">Role</label>
+                        <select id="staffAccountRole" required>
+                            <option value="teacher">Teacher</option>
+                            <option value="principal">Principal</option>
+                        </select>
+
+                        <label for="staffAccountPassword">Initial Password</label>
+                        <input id="staffAccountPassword" type="password" minlength="8" autocomplete="new-password" required>
+
+                        <button type="submit" class="button button-gold full-button">Create Staff Account</button>
+                        <p id="staffAccountMessage" class="form-message" role="status"></p>
+                    </form>
+                </div>
+            </div>
+        </section>
+
         <section class="section portal-section" id="portal">
 
             <p class="section-label">COLLEGE EVENT PORTAL</p>
@@ -740,11 +896,25 @@
             </div>
 
             <p class="portal-security-note">
-                Registration preview: secure account creation and
-                role verification will be connected to the backend
-                in a later step.
+                Student registration and authenticated role-based access are connected to the backend.
+                Please sign in with a valid college account to access protected admin and event management features.
             </p>
 
+        </section>
+
+        <section class="section gallery-section" id="gallerySection">
+            <p class="section-label">COLLEGE MEMORIES</p>
+            <h2>Annual Party <span>Snapshots.</span></h2>
+            <p class="section-description">Browse the year-wise memories from college celebrations and annual parties.</p>
+
+            <div class="gallery-filter-row">
+                <label for="galleryYearFilter">Filter by year</label>
+                <select id="galleryYearFilter">
+                    <option value="all">All years</option>
+                </select>
+            </div>
+
+            <div id="galleryGrid" class="gallery-grid" aria-live="polite"></div>
         </section>
 
     </main>

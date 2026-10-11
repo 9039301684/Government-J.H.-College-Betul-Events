@@ -27,6 +27,11 @@ test("allows 10 requests and blocks the 11th request", async () => {
         );
     }
 
+        assert.ok(
+    responses[0].headers["ratelimit-policy"],
+    "Response should include the RateLimit-Policy header"
+);
+
     const blockedResponse = responses[10];
 
     assert.equal(blockedResponse.status, 429);

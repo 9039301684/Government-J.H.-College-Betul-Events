@@ -7,6 +7,57 @@ const { allowRoles } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
+router.get("/me", authenticateToken, allowRoles("admin", "principal", "teacher"), async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT id, full_name, email, role, created_at
+             FROM users
+             WHERE id = $1`,
+            [req.user.id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "User profile not found."
+            });
+        }
+
+        return res.json({
+            success: true,
+            user: result.rows[0]
+        });
+    } catch (error) {
+        console.error("Get user profile error:", error.message);
+        return res.status(500).json({
+            success: false,
+            message: "Unable to load user profile."
+        });
+    }
+});
+
+router.get("/", authenticateToken, allowRoles("admin", "principal"), async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT id, full_name, email, role, created_at
+             FROM users
+             ORDER BY role ASC, full_name ASC`
+        );
+
+        return res.json({
+            success: true,
+            count: result.rows.length,
+            users: result.rows
+        });
+    } catch (error) {
+        console.error("Get users error:", error.message);
+        return res.status(500).json({
+            success: false,
+            message: "Unable to load user accounts."
+        });
+    }
+});
+
 // CREATE TEACHER OR PRINCIPAL ACCOUNT
 router.post(
     "/",
@@ -16,7 +67,6 @@ router.post(
         try {
             const { full_name, email, password, role } = req.body;
 
-            // Validate required fields
             if (
                 typeof full_name !== "string" ||
                 !full_name.trim() ||
@@ -33,7 +83,6 @@ router.post(
                 });
             }
 
-            // Principal can create teachers only.
             if (
                 req.user.role === "principal" &&
                 role !== "teacher"
@@ -48,7 +97,6 @@ router.post(
             const cleanName = full_name.trim();
             const cleanEmail = email.trim().toLowerCase();
 
-            // Validate email
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
                 return res.status(400).json({
                     success: false,
@@ -56,7 +104,6 @@ router.post(
                 });
             }
 
-            // Hash password before storing it
             const passwordHash = await bcrypt.hash(password, 12);
 
             const result = await pool.query(

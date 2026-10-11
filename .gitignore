@@ -4,6 +4,7 @@
 !.env.example
 backend/.env
 backend/.env.*
+!backend/.env.example
 
 # Dependencies
 node_modules/
@@ -30,3 +31,6 @@ script_backup.js
 backend/scripts/checkAdminLogin.js
 backend/scripts/createFirstAdmin.js
 backend/scripts/resetAdminPassword.js
+
+# Local handover archive
+/JH-College-Events-Handover.zip

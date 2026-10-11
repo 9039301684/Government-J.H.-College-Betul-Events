@@ -25,10 +25,14 @@ function authenticateToken(req, res, next) {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         const validRoles = ["student", "teacher", "principal", "admin"];
+        const normalizedRole = typeof decoded.role === "string"
+            ? decoded.role.trim().toLowerCase()
+            : decoded.role;
+        const numericId = Number(decoded.id);
 
         if (
-            !Number.isInteger(decoded.id) ||
-            !validRoles.includes(decoded.role)
+            !Number.isInteger(numericId) ||
+            !validRoles.includes(normalizedRole)
         ) {
             return res.status(401).json({
                 success: false,
@@ -37,15 +41,15 @@ function authenticateToken(req, res, next) {
         }
 
         req.user = {
-            id: decoded.id,
-            role: decoded.role
+            id: numericId,
+            role: normalizedRole
         };
 
         // Backward compatibility with existing Student routes.
-        if (decoded.role === "student") {
+        if (normalizedRole === "student") {
             req.student = {
-                id: decoded.id,
-                role: decoded.role
+                id: numericId,
+                role: normalizedRole
             };
         }
 

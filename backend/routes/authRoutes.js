@@ -11,13 +11,17 @@ const VALID_ROLES = ["student", "teacher", "principal", "admin"];
 router.post("/login", loginRateLimiter, async (req, res) => {
     try {
         const { email, password, role } = req.body;
+        const normalizedRole = typeof role === "string"
+            ? role.trim().toLowerCase()
+            : undefined;
 
         if (
             typeof email !== "string" ||
             !email.trim() ||
             typeof password !== "string" ||
             !password ||
-            !VALID_ROLES.includes(role)
+            !normalizedRole ||
+            !VALID_ROLES.includes(normalizedRole)
         ) {
             return res.status(400).json({
                 success: false,
@@ -37,9 +41,9 @@ router.post("/login", loginRateLimiter, async (req, res) => {
         const cleanEmail = email.trim().toLowerCase();
 
         let account;
-        let actualRole = role;
+        let actualRole = normalizedRole;
 
-        if (role === "student") {
+        if (normalizedRole === "student") {
             const result = await pool.query(
                 `SELECT id, full_name, email, gender, semester,
                         roll_number, password_hash
@@ -60,13 +64,15 @@ router.post("/login", loginRateLimiter, async (req, res) => {
             account = result.rows[0];
 
             if (account) {
-                actualRole = account.role;
+                actualRole = typeof account.role === "string"
+                    ? account.role.trim().toLowerCase()
+                    : account.role;
             }
         }
 
         if (
             !account ||
-            actualRole !== role ||
+            actualRole !== normalizedRole ||
             !(await bcrypt.compare(password, account.password_hash))
         ) {
             return res.status(401).json({

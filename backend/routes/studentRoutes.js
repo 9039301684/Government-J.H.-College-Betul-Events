@@ -1,26 +1,29 @@
-const express = require("express");
+﻿const express = require("express");
 const bcrypt = require("bcrypt");
 const pool = require("../db");
 const jwt = require("jsonwebtoken");
 const loginRateLimiter = require("../middleware/loginRateLimiter");
+const registrationRateLimiter = require("../middleware/registrationRateLimiter");
 const authenticateStudent = require("../middleware/authMiddleware");
 const { allowRoles } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
 // 1. REGISTER STUDENT
-router.post( "/register", authenticateStudent, allowRoles("admin", "principal"), async (req, res) => {
+router.post("/register", registrationRateLimiter, async (req, res) => {
   try {
     const { full_name, email, password, gender, semester, roll_number } = req.body;
 
     if (
       typeof full_name !== "string" || !full_name.trim() ||
       typeof email !== "string" || !email.trim() ||
-      typeof password !== "string" || password.length < 8
+      typeof password !== "string" || password.length < 8 ||
+      typeof gender !== "string" || !gender.trim() ||
+      typeof roll_number !== "string" || !roll_number.trim()
     ) {
       return res.status(400).json({
         success: false,
-        message: "Name, email and password (minimum 8 characters) are required.",
+        message: "Name, email, gender, roll number and password (minimum 8 characters) are required.",
       });
     }
 
@@ -28,7 +31,7 @@ router.post( "/register", authenticateStudent, allowRoles("admin", "principal"),
     const cleanEmail = email.trim().toLowerCase();
     const cleanSemester = Number(semester);
 
-    // Email à¤”à¤° Semester à¤µà¥ˆà¤²à¤¿à¤¡à¥‡à¤¶à¤¨
+    // Email Ã Â¤â€Ã Â¤Â° Semester Ã Â¤ÂµÃ Â¥Ë†Ã Â¤Â²Ã Â¤Â¿Ã Â¤Â¡Ã Â¥â€¡Ã Â¤Â¶Ã Â¤Â¨
     if (
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail) ||
       !Number.isInteger(cleanSemester) ||
@@ -50,9 +53,9 @@ router.post( "/register", authenticateStudent, allowRoles("admin", "principal"),
       [
         cleanName,
         cleanEmail,
-        typeof gender === "string" ? gender.trim() || null : null,
+        gender.trim(),
         cleanSemester,
-        typeof roll_number === "string" ? roll_number.trim() || null : null,
+        roll_number.trim(),
         passwordHash,
       ]
     );
@@ -101,7 +104,6 @@ router.get("/directory", async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT
-        id,
         full_name,
         semester
       FROM students
@@ -184,6 +186,7 @@ router.post("/login", loginRateLimiter, async (req, res) => {
         id: student.id,
         full_name: student.full_name,
         email: student.email,
+        role: "student",
         gender: student.gender,
         semester: student.semester,
         roll_number: student.roll_number,
@@ -198,7 +201,7 @@ router.post("/login", loginRateLimiter, async (req, res) => {
   }
 });
 
-// 4. GET CURRENT STUDENT (à¤‡à¤¸à¥‡ à¤Šà¤ªà¤° à¤¶à¤¿à¤«à¥à¤Ÿ à¤•à¤¿à¤¯à¤¾ à¤—à¤¯à¤¾ à¤¤à¤¾à¤•à¤¿ à¤¯à¤¹ à¤¸à¤¹à¥€ à¤¸à¥‡ à¤à¤•à¥à¤¸à¤ªà¥‹à¤°à¥à¤Ÿ à¤¹à¥‹ à¤¸à¤•à¥‡)
+// 4. GET CURRENT STUDENT (Ã Â¤â€¡Ã Â¤Â¸Ã Â¥â€¡ Ã Â¤Å Ã Â¤ÂªÃ Â¤Â° Ã Â¤Â¶Ã Â¤Â¿Ã Â¤Â«Ã Â¥ÂÃ Â¤Å¸ Ã Â¤â€¢Ã Â¤Â¿Ã Â¤Â¯Ã Â¤Â¾ Ã Â¤â€”Ã Â¤Â¯Ã Â¤Â¾ Ã Â¤Â¤Ã Â¤Â¾Ã Â¤â€¢Ã Â¤Â¿ Ã Â¤Â¯Ã Â¤Â¹ Ã Â¤Â¸Ã Â¤Â¹Ã Â¥â‚¬ Ã Â¤Â¸Ã Â¥â€¡ Ã Â¤ÂÃ Â¤â€¢Ã Â¥ÂÃ Â¤Â¸Ã Â¤ÂªÃ Â¥â€¹Ã Â¤Â°Ã Â¥ÂÃ Â¤Å¸ Ã Â¤Â¹Ã Â¥â€¹ Ã Â¤Â¸Ã Â¤â€¢Ã Â¥â€¡)
 
 router.get("/me", authenticateStudent, allowRoles("student"), async (req, res) => {
 
@@ -213,12 +216,18 @@ router.get("/me", authenticateStudent, allowRoles("student"), async (req, res) =
       return res.status(401).json({ success: false, message: "Student account not found." });
     }
 
-    return res.json({ success: true, student: result.rows[0] });
+    return res.json({
+      success: true,
+      student: {
+        ...result.rows[0],
+        role: "student"
+      }
+    });
   } catch (error) {
     console.error("Get current student error:", error.message);
     return res.status(500).json({ success: false, message: "Failed to load student profile." });
   }
 });
 
-// à¤«à¤¼à¤¾à¤‡à¤² à¤•à¥‡ à¤…à¤‚à¤¤ à¤®à¥‡à¤‚ à¤¸à¤¾à¤°à¥‡ à¤°à¥‚à¤Ÿà¥à¤¸ à¤•à¥‹ à¤à¤•à¥à¤¸à¤ªà¥‹à¤°à¥à¤Ÿ à¤•à¤°à¥‡à¤‚
+// Ã Â¤Â«Ã Â¤Â¼Ã Â¤Â¾Ã Â¤â€¡Ã Â¤Â² Ã Â¤â€¢Ã Â¥â€¡ Ã Â¤â€¦Ã Â¤â€šÃ Â¤Â¤ Ã Â¤Â®Ã Â¥â€¡Ã Â¤â€š Ã Â¤Â¸Ã Â¤Â¾Ã Â¤Â°Ã Â¥â€¡ Ã Â¤Â°Ã Â¥â€šÃ Â¤Å¸Ã Â¥ÂÃ Â¤Â¸ Ã Â¤â€¢Ã Â¥â€¹ Ã Â¤ÂÃ Â¤â€¢Ã Â¥ÂÃ Â¤Â¸Ã Â¤ÂªÃ Â¥â€¹Ã Â¤Â°Ã Â¥ÂÃ Â¤Å¸ Ã Â¤â€¢Ã Â¤Â°Ã Â¥â€¡Ã Â¤â€š
 module.exports = router;
